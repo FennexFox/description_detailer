@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../json/definitions.dart';
+import '../constants/app_constants.dart';
 
 class ResponsePage extends StatelessWidget {
   final JsonResponse? jsonResponse;
@@ -9,8 +10,11 @@ class ResponsePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (jsonResponse == null) {
-      return const Center(
-        child: Text('No data available. Please submit a request first.'),
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Text(AppConstants.noDataMessage),
+        ),
       );
     }
 
@@ -24,7 +28,7 @@ class ResponsePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Detailed Response',
+                'Reconstructed Writing',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const Divider(),

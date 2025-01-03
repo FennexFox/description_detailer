@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../json/definitions.dart';
@@ -28,7 +29,9 @@ class DetailerService {
           .replaceAll("```", "")
           .replaceAll("json", "");
       
+      // debugPrint(jsonDecode(cleanResponse));
       final jsonMap = jsonDecode(jsonDecode(cleanResponse));
+      debugPrint(jsonMap.toString());
       return JsonResponse.fromJson(jsonMap);
     }
     throw Exception('Failed to send request: ${response.statusCode}');

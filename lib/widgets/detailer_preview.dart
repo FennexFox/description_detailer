@@ -28,7 +28,7 @@ class DetailerPreviewGrid extends StatelessWidget {
           onPressed: null,
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
+              borderRadius: BorderRadius.circular(8.0),
             ),
             padding: const EdgeInsets.all(12.0),
           ),

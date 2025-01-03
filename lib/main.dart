@@ -9,6 +9,7 @@ import 'widgets/detailer_preview.dart';
 import 'widgets/inspector_page.dart';
 import 'widgets/response_page.dart';
 import 'widgets/credit_page.dart';
+import 'constants/app_constants.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,15 +21,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Detailer',
+      title: AppConstants.appName,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepOrange,
+          seedColor: AppConstants.seedColor,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
       ),
-      home: const DetailerHome(title: 'Description Detailer'),
+      home: const DetailerHome(title: AppConstants.appName),
     );
   }
 }
@@ -43,11 +44,11 @@ class DetailerHome extends StatefulWidget {
 
 class DetailerHomeState extends State<DetailerHome> {
   late final PageController _pageController;
-  int _selectedIndex = 1;
-
   final titleTextController = TextEditingController();
   final bodyTextController = TextEditingController();
+
   JsonResponse? _jsonResponse;
+  int _selectedIndex = AppConstants.defaultPageIndex;
   bool _isLoading = false;
 
   @override
@@ -69,7 +70,7 @@ class DetailerHomeState extends State<DetailerHome> {
     setState(() => _selectedIndex = index);
     _pageController.animateToPage(
       index,
-      duration: const Duration(milliseconds: 300),
+      duration: AppConstants.pageTransitionDuration,
       curve: Curves.easeInOut,
     );
   }
@@ -94,7 +95,7 @@ class DetailerHomeState extends State<DetailerHome> {
 
   Future<void> onPressPost() async {
     if (titleTextController.text.isEmpty || bodyTextController.text.isEmpty) {
-      _showErrorSnackBar('Please fill in all fields');
+      _showErrorSnackBar(AppConstants.emptyFieldsMessage);
       return;
     }
 
@@ -118,7 +119,7 @@ class DetailerHomeState extends State<DetailerHome> {
     } catch (e) {
       setState(() => _isLoading = false);
       _showErrorSnackBar(e is TimeoutException 
-        ? 'Server Timeout. Please try again.' 
+        ? AppConstants.timeoutMessage 
         : 'Error: ${e.toString()}');
     }
   }
@@ -127,15 +128,17 @@ class DetailerHomeState extends State<DetailerHome> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.white,
-        duration: const Duration(seconds: 3),
+        duration: AppConstants.snackBarDuration,
       ),
     );
   }
 
   void _showSuccessSnackBar() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Successfully sent request')),
+      SnackBar(
+        content: Text(AppConstants.successMessage),
+        duration: AppConstants.snackBarDuration,
+      ),
     );
   }
 
@@ -170,7 +173,7 @@ class DetailerHomeState extends State<DetailerHome> {
                   bodyTextController: bodyTextController,
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -183,17 +186,20 @@ class DetailerHomeState extends State<DetailerHome> {
                           RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
                         ),
                       ),
-                      child: const Text("Submit"),
+                      child: const Text("Send Draft"),
                       ),
                   ),
                 ),
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
                   child: Divider(),
                 ),
-                DetailerPreviewGrid(
-                  jsonResponse: _jsonResponse,
-                  isLoading: _isLoading,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: DetailerPreviewGrid(
+                    jsonResponse: _jsonResponse,
+                    isLoading: _isLoading,
+                    ),
                 ),
               ],
             ),
@@ -205,26 +211,27 @@ class DetailerHomeState extends State<DetailerHome> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Theme.of(context).colorScheme.onPrimary,
         selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold),
         useLegacyColorScheme: false,
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
-            label: 'inspect',
-            backgroundColor: Colors.deepOrange,
+            label: AppConstants.inspectLabel,
+            backgroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.edit_document),
-            label: 'write',
-            backgroundColor: Colors.deepOrange,
+            label: AppConstants.writeLabel,
+            backgroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.question_answer),
-            label: 'response',
-            backgroundColor: Colors.deepOrange,
+            label: AppConstants.responseLabel,
+            backgroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepOrange[300],
         onTap: _onItemTapped,
       ),
     );

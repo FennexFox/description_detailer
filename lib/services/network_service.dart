@@ -1,7 +1,7 @@
 import 'dart:io';
 
 class NetworkService {
-  static const baseUrl = 'http://127.0.0.1:5000';
+  static const baseUrl = 'https://e569-112-187-131-140.ngrok-free.app';
   static const timeout = Duration(seconds: 30);
 
   static String getAdjustedUrl(String inputUrl) {

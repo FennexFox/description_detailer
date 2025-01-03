@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../json/definitions.dart';
+import '../constants/app_constants.dart';
 
 class InspectorPage extends StatelessWidget {
   final JsonResponse? jsonResponse;
@@ -19,8 +20,8 @@ class InspectorPage extends StatelessWidget {
     if (jsonResponse == null) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('No data available. Please submit a request first.'),
+          padding: EdgeInsets.all(16.0),
+          child: Text(AppConstants.noDataMessage),
         ),
       );
     }

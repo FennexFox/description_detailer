@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_constants.dart';
 
 class CreditPage extends StatelessWidget {
   const CreditPage({super.key});
@@ -8,7 +9,7 @@ class CreditPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('About'),
+        title: const Text(AppConstants.aboutLabel),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -16,11 +17,11 @@ class CreditPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Description Detailer',
+              AppConstants.appName,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Version 0.5.0'),
+            const Text(AppConstants.appVersion),
             const Divider(),
             const SizedBox(height: 16),
             Text(
@@ -28,14 +29,14 @@ class CreditPage extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('AnotherFireFox'),
+            const Text(AppConstants.createdBy),
             const SizedBox(height: 24),
             Text(
               'Powered by',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text('Flutter & OpenAI'),
+            const Text(AppConstants.poweredBy),
           ],
         ),
       ),
