@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
 import 'json/definitions.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'services/detailer_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,7 +13,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,7 +31,6 @@ class MyApp extends StatelessWidget {
 
 class DetailerHome extends StatefulWidget {
   const DetailerHome({super.key, required this.title});
-
   final String title;
 
   @override
@@ -43,7 +42,14 @@ class DetailerHomeState extends State<DetailerHome> {
 
   final titleTextController = TextEditingController();
   final bodyTextController = TextEditingController();
-  late JsonResponse jsonResponse;
+  JsonResponse? _jsonResponse;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _jsonResponse = null;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -67,62 +73,90 @@ class DetailerHomeState extends State<DetailerHome> {
 
   Future<void> onPressPost() async {
     try {
+      setState(() => _isLoading = true);
+      
       if (titleTextController.text.isEmpty || bodyTextController.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please fill in all fields')),
-        );
-        return;
+        throw Exception('Please fill in all fields');
       }
 
-      final requestBody = JsonToRequest(
+      final request = JsonToRequest(
         title: titleTextController.text,
         body: bodyTextController.text,
         requested: true,
       );
       
-      final jsonString = jsonEncode(requestBody.toJson());
-      debugPrint('Sending JSON: $jsonString'); // Debug print
+      final response = await DetailerService.postDetail(request);
+      
+      setState(() {
+        _jsonResponse = response;
+        _isLoading = false;
+      });
 
-      final response = await http.post(
-        Uri.parse(getAdjustedUrl('http://127.0.0.1:5000/detailer')),
-        headers: {
-          'Content-Type': 'application/json',  // Simplified header
-          'Accept': 'application/json',
-        },
-        body: jsonString,
-      );
-
-      if (response.statusCode == 200) {
-        String cleanResponse = response.body.replaceAll(RegExp(r'\\n'), '');
-        cleanResponse = cleanResponse.replaceAll("```", "");
-        cleanResponse = cleanResponse.replaceAll("json", "");
-
-        debugPrint('Response cleaned: $cleanResponse');
-
-        final Map<String, dynamic> jsonMap = jsonDecode(jsonDecode(cleanResponse));
-        debugPrint('Response JSON: $jsonMap');
-        final JsonResponse jsonResponse = JsonResponse.fromJson(jsonMap);
-        debugPrint('Response: $jsonResponse');
-
-        debugPrint('Response type: ${jsonMap.runtimeType}');
-        debugPrint('Response Detailed: ${jsonResponse.detailed}');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully sent request')),
-        );
-        
-        // Optional: Update state with response
-        // setState(() {
-        //   jsonResponse = JsonResponse.fromJson(jsonMap);
-        // });
-      } else {
-        throw Exception('Failed to send request: ${response.statusCode}');
-      }
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        const SnackBar(content: Text('Successfully sent request')),
       );
-      debugPrint('Error in onPressPost: ${e.toString()}');
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e is TimeoutException 
+            ? 'Server Timeout. Please try again.' 
+            : 'Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Widget responsePreview(String answerKey) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width / 2,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+        child: ElevatedButton(
+          onPressed: null,
+          style: ElevatedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            padding: const EdgeInsets.all(12.0),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: _isLoading 
+                  ? const CircularProgressIndicator(strokeWidth: 2)
+                  : _jsonResponse == null 
+                    ? const Icon(Icons.circle, size: 12, color: Colors.grey)
+                    : Icon(
+                        Icons.circle,
+                        size: 12,
+                        color: _getStatusColor(_jsonResponse!.fiveWoneH[answerKey]?.isProvided),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  answerKey,
+                  textAlign: TextAlign.start,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch(status) {
+      case "true": return Colors.green;
+      case "implied": return Colors.yellow;
+      default: return Colors.red;
     }
   }
 
@@ -134,27 +168,61 @@ class DetailerHomeState extends State<DetailerHome> {
         title: Text(widget.title),
       ),
       body: Column(
-        spacing: 16.0,
+        spacing: 4.0,
         children: [
           DetailerTextFields(titleTextController: titleTextController, bodyTextController: bodyTextController,),
-          ElevatedButton(
-            onPressed: onPressPost,
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.deepOrange[300]),
-              textStyle: WidgetStateProperty.all(
-                TextStyle(
-                  foreground: Paint()..color = Colors.black,
-                  fontWeight: FontWeight.bold,
-                )
+            SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: ElevatedButton(
+                onPressed: onPressPost,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(
+                  Theme.of(context).colorScheme.onSurface
+                  ),
+                  shape: WidgetStateProperty.all(
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
+                  ),
+                  textStyle: WidgetStateProperty.all(
+                  TextStyle(
+                    foreground: Paint()..color = Colors.black,
+                    fontWeight: FontWeight.bold,
+                  )
+                  ),
+                ),
+                child: Text("Submit"),
+                ),
               ),
             ),
-            child: Text("Submit"),
-          )
-          // DetailerPreviewViewer(),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(child: responsePreview("Who")),
+              Expanded(child: responsePreview("When")),
+            ],
+            ),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(child: responsePreview("Where")),
+              Expanded(child: responsePreview("What")),
+            ],
+            ),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(child: responsePreview("Why")),
+              Expanded(child: responsePreview("How")),
+            ],
+            ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
+        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+        selectedIconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
+        useLegacyColorScheme: false,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.search),
@@ -218,6 +286,26 @@ class DetailerTextFields extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class DetailerPreviewViewer extends StatelessWidget {
+  final Answer5W1H? fiveWoneH;
+  final String answrKey;
+
+  const DetailerPreviewViewer({super.key, required this.fiveWoneH, required this.answrKey});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      spacing: 16.0,
+      children: [
+        Text(answrKey),
+        const Divider(),
+        Text('answer: ${fiveWoneH?.answer}'),
+        Text('isProvided: ${fiveWoneH?.isProvided}'),
+      ],
     );
   }
 }
