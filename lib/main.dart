@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'json/definitions.dart';
 import 'services/detailer_service.dart';
+import 'widgets/detailer_preview.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,6 +52,13 @@ class DetailerHomeState extends State<DetailerHome> {
     _jsonResponse = null;
   }
 
+  @override
+  void dispose() {
+    titleTextController.dispose();
+    bodyTextController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -72,13 +80,14 @@ class DetailerHomeState extends State<DetailerHome> {
   }
 
   Future<void> onPressPost() async {
-    try {
-      setState(() => _isLoading = true);
-      
-      if (titleTextController.text.isEmpty || bodyTextController.text.isEmpty) {
-        throw Exception('Please fill in all fields');
-      }
+    if (titleTextController.text.isEmpty || bodyTextController.text.isEmpty) {
+      _showErrorSnackBar('Please fill in all fields');
+      return;
+    }
 
+    setState(() => _isLoading = true);
+
+    try {
       final request = JsonToRequest(
         title: titleTextController.text,
         body: bodyTextController.text,
@@ -92,72 +101,29 @@ class DetailerHomeState extends State<DetailerHome> {
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Successfully sent request')),
-      );
+      _showSuccessSnackBar();
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e is TimeoutException 
-            ? 'Server Timeout. Please try again.' 
-            : 'Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      _showErrorSnackBar(e is TimeoutException 
+        ? 'Server Timeout. Please try again.' 
+        : 'Error: ${e.toString()}');
     }
   }
 
-  Widget responsePreview(String answerKey) {
-    return SizedBox(
-      width: MediaQuery.of(context).size.width / 2,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-        child: ElevatedButton(
-          onPressed: null,
-          style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            padding: const EdgeInsets.all(12.0),
-          ),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: _isLoading 
-                  ? const CircularProgressIndicator(strokeWidth: 2)
-                  : _jsonResponse == null 
-                    ? const Icon(Icons.circle, size: 12, color: Colors.grey)
-                    : Icon(
-                        Icons.circle,
-                        size: 12,
-                        color: _getStatusColor(_jsonResponse!.fiveWoneH[answerKey]?.isProvided),
-                      ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  answerKey,
-                  textAlign: TextAlign.start,
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ),
-            ],
-          ),
-        ),
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.white,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  Color _getStatusColor(String? status) {
-    switch(status) {
-      case "true": return Colors.green;
-      case "implied": return Colors.yellow;
-      default: return Colors.red;
-    }
+  void _showSuccessSnackBar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Successfully sent request')),
+    );
   }
 
   @override
@@ -168,58 +134,37 @@ class DetailerHomeState extends State<DetailerHome> {
         title: Text(widget.title),
       ),
       body: Column(
-        spacing: 4.0,
         children: [
-          DetailerTextFields(titleTextController: titleTextController, bodyTextController: bodyTextController,),
-            SizedBox(
+          DetailerTextFields(
+            titleTextController: titleTextController,
+            bodyTextController: bodyTextController,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: SizedBox(
               width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: ElevatedButton(
+              child: ElevatedButton(
                 onPressed: onPressPost,
                 style: ButtonStyle(
                   backgroundColor: WidgetStateProperty.all(
-                  Theme.of(context).colorScheme.onSurface
+                    Theme.of(context).colorScheme.onSecondary
                   ),
                   shape: WidgetStateProperty.all(
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
-                  ),
-                  textStyle: WidgetStateProperty.all(
-                  TextStyle(
-                    foreground: Paint()..color = Colors.black,
-                    fontWeight: FontWeight.bold,
-                  )
+                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
                   ),
                 ),
-                child: Text("Submit"),
+                child: const Text("Submit"),
                 ),
-              ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: const Divider(),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(child: responsePreview("Who")),
-                Expanded(child: responsePreview("When")),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(child: responsePreview("Where")),
-                Expanded(child: responsePreview("What")),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(child: responsePreview("Why")),
-                Expanded(child: responsePreview("How")),
-              ],
-            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8.0),
+            child: Divider(),
+          ),
+          DetailerPreviewGrid(
+            jsonResponse: _jsonResponse,
+            isLoading: _isLoading,
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -290,26 +235,6 @@ class DetailerTextFields extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class DetailerPreviewViewer extends StatelessWidget {
-  final Answer5W1H? fiveWoneH;
-  final String answrKey;
-
-  const DetailerPreviewViewer({super.key, required this.fiveWoneH, required this.answrKey});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      spacing: 16.0,
-      children: [
-        Text(answrKey),
-        const Divider(),
-        Text('answer: ${fiveWoneH?.answer}'),
-        Text('isProvided: ${fiveWoneH?.isProvided}'),
-      ],
     );
   }
 }
