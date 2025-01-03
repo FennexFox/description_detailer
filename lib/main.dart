@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'json/definitions.dart';
 import 'services/detailer_service.dart';
 import 'widgets/detailer_preview.dart';
+import 'widgets/inspector_page.dart';
+import 'widgets/response_page.dart';
+import 'widgets/credit_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,7 +28,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const DetailerHome(title: 'Detailer Homepage'),
+      home: const DetailerHome(title: 'Description Detailer'),
     );
   }
 }
@@ -39,6 +42,7 @@ class DetailerHome extends StatefulWidget {
 }
 
 class DetailerHomeState extends State<DetailerHome> {
+  late final PageController _pageController;
   int _selectedIndex = 1;
 
   final titleTextController = TextEditingController();
@@ -49,20 +53,29 @@ class DetailerHomeState extends State<DetailerHome> {
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
     _jsonResponse = null;
   }
 
   @override
   void dispose() {
+    _pageController.dispose();
     titleTextController.dispose();
     bodyTextController.dispose();
     super.dispose();
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _selectedIndex = index);
   }
 
   String getAdjustedUrl(String inputUrl) { // adjust Localhost for Android Emulator
@@ -132,39 +145,60 @@ class DetailerHomeState extends State<DetailerHome> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-      ),
-      body: Column(
-        children: [
-          DetailerTextFields(
-            titleTextController: titleTextController,
-            bodyTextController: bodyTextController,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreditPage()),
+              );
+            },
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPressPost,
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(
-                    Theme.of(context).colorScheme.onSecondary
-                  ),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
+        ],
+      ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: _onPageChanged,
+        children: [
+          InspectorPage(jsonResponse: _jsonResponse),
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                DetailerTextFields(
+                  titleTextController: titleTextController,
+                  bodyTextController: bodyTextController,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onPressPost,
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(
+                          Theme.of(context).colorScheme.onSecondary
+                        ),
+                        shape: WidgetStateProperty.all(
+                          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0))
+                        ),
+                      ),
+                      child: const Text("Submit"),
+                      ),
                   ),
                 ),
-                child: const Text("Submit"),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Divider(),
                 ),
+                DetailerPreviewGrid(
+                  jsonResponse: _jsonResponse,
+                  isLoading: _isLoading,
+                ),
+              ],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8.0),
-            child: Divider(),
-          ),
-          DetailerPreviewGrid(
-            jsonResponse: _jsonResponse,
-            isLoading: _isLoading,
-          ),
+          ResponsePage(jsonResponse: _jsonResponse),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
