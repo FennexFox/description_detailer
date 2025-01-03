@@ -195,26 +195,30 @@ class DetailerHomeState extends State<DetailerHome> {
                 ),
               ),
             ),
-            Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(child: responsePreview("Who")),
-              Expanded(child: responsePreview("When")),
-            ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: const Divider(),
             ),
             Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(child: responsePreview("Where")),
-              Expanded(child: responsePreview("What")),
-            ],
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(child: responsePreview("Who")),
+                Expanded(child: responsePreview("When")),
+              ],
             ),
             Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(child: responsePreview("Why")),
-              Expanded(child: responsePreview("How")),
-            ],
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(child: responsePreview("Where")),
+                Expanded(child: responsePreview("What")),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(child: responsePreview("Why")),
+                Expanded(child: responsePreview("How")),
+              ],
             ),
         ],
       ),
@@ -281,8 +285,8 @@ class DetailerTextFields extends StatelessWidget {
                 hintText: 'Describe the event',
               ),
             textInputAction: TextInputAction.done,
-            minLines: 5,
-            maxLines: 20,
+            minLines: 8,
+            maxLines: 8,
           ),
         ],
       ),
